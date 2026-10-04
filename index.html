@@ -1,0 +1,2268 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Home Burger City</title>
+<h4 class="r">برای خروج از خانه اول برگر را بخورید، سپس به سمت در خروجی بروید و کمی عقب تر از پادری هوم، از خانه خارج شوید</h4>
+<style>
+*{
+    box-sizing:border-box;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    font-family:Arial,sans-serif;
+}
+
+.r{
+    color: #ffffff;
+}
+canvas{
+    display:block;
+    width:100%;
+    height:100%;
+}
+
+#loading{
+    position:fixed;
+    inset:0;
+    background:#101010;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    font-size:22px;
+}
+
+#ui{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:20;
+}
+
+#worldName{
+    position:absolute;
+    top:18px;
+    left:50%;
+    transform:translateX(-50%);
+    color:#fff;
+    background:rgba(0,0,0,.5);
+    padding:8px 18px;
+    border-radius:14px;
+}
+
+#prompt{
+    position:absolute;
+    left:50%;
+    bottom:105px;
+    transform:translateX(-50%);
+    color:#fff;
+    background:rgba(0,0,0,.78);
+    padding:11px 20px;
+    border-radius:13px;
+    display:none;
+    white-space:nowrap;
+}
+
+#message{
+    position:absolute;
+    left:50%;
+    top:70px;
+    transform:translateX(-50%);
+    color:#fff;
+    background:rgba(0,0,0,.78);
+    padding:11px 20px;
+    border-radius:13px;
+    display:none;
+    white-space:nowrap;
+}
+
+#crosshair{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:8px;
+    height:8px;
+    transform:translate(-50%,-50%);
+    border:1px solid white;
+    border-radius:50%;
+}
+
+/* MOBILE */
+
+#mobileControls{
+    display:none;
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:30;
+}
+
+#lookArea{
+    position:absolute;
+    right:0;
+    top:0;
+    width:58%;
+    height:78%;
+    pointer-events:auto;
+}
+
+#joystick{
+    position:absolute;
+    left:24px;
+    bottom:25px;
+    width:125px;
+    height:125px;
+    border:2px solid rgba(255,255,255,.45);
+    border-radius:50%;
+    background:rgba(255,255,255,.08);
+    pointer-events:auto;
+}
+
+#stick{
+    position:absolute;
+    width:54px;
+    height:54px;
+    left:33px;
+    top:33px;
+    border-radius:50%;
+    background:rgba(255,255,255,.35);
+}
+
+.mobileBtn{
+    position:absolute;
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.55);
+    background:rgba(0,0,0,.4);
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:25px;
+    pointer-events:auto;
+}
+
+#jumpBtn{
+    right:24px;
+    bottom:35px;
+}
+
+#actionBtn{
+    right:102px;
+    bottom:108px;
+    font-size:19px;
+}
+
+#fullscreenBtn{
+    right:20px;
+    top:20px;
+    width:48px;
+    height:48px;
+    font-size:20px;
+    z-index:40;
+}
+
+#soundBtn{
+    right:78px;
+    top:20px;
+    width:48px;
+    height:48px;
+    font-size:20px;
+    z-index:40;
+}
+
+#startSound{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.72);
+    color:white;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:15px;
+    z-index:200;
+}
+
+#startSound button{
+    border:0;
+    border-radius:14px;
+    padding:14px 25px;
+    font-size:18px;
+    background:#fff;
+    color:#111;
+}
+
+@media(max-width:800px){
+
+    #mobileControls{
+        display:block;
+    }
+
+    #crosshair{
+        display:none;
+    }
+
+    #prompt{
+        bottom:155px;
+    }
+
+    #message{
+        top:80px;
+        max-width:90%;
+        text-align:center;
+    }
+}
+</style>
+
+<script type="importmap">
+{
+    "imports":{
+        "three":"https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+        "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/"
+    }
+}
+</script>
+</head>
+
+<body>
+
+<div id="loading">
+    در حال بارگذاری...
+</div>
+
+<div id="ui">
+
+    <div id="worldName">
+        HOME
+    </div>
+
+    <div id="crosshair"></div>
+
+    <div id="prompt"></div>
+
+    <div id="message"></div>
+
+</div>
+
+<div id="mobileControls">
+
+    <div id="lookArea"></div>
+
+    <div id="joystick">
+        <div id="stick"></div>
+    </div>
+
+    <div id="actionBtn" class="mobileBtn">
+        E
+    </div>
+
+    <div id="jumpBtn" class="mobileBtn">
+        ↑
+    </div>
+
+    <div id="soundBtn" class="mobileBtn">
+        🔊
+    </div>
+
+    <div id="fullscreenBtn" class="mobileBtn">
+        ⛶
+    </div>
+
+</div>
+
+<div id="startSound">
+    <div>برای فعال شدن صدا لمس کن 🔊</div>
+    <button id="startSoundButton">شروع بازی</button>
+</div>
+
+<script type="module">
+
+import * as THREE from 'three';
+
+import {
+    GLTFLoader
+} from 'three/addons/loaders/GLTFLoader.js';
+
+
+// =====================================================
+// SETTINGS
+// =====================================================
+
+const HOME_SCALE=10;
+const CITY_SCALE=10;
+const BURGER_SCALE=0.05;
+
+const PLAYER_HEIGHT=1.2;
+const PLAYER_RADIUS=0.28;
+
+const WALK_SPEED=4.2;
+const RUN_SPEED=6.5;
+
+const GRAVITY=18;
+const JUMP_POWER=6.5;
+
+const INTERACTION_DISTANCE=3.5;
+
+
+// =====================================================
+// SCENE
+// =====================================================
+
+const scene=new THREE.Scene();
+
+scene.background=
+    new THREE.Color(0x87a9c5);
+
+scene.fog=
+    new THREE.Fog(
+        0x87a9c5,
+        50,
+        400
+    );
+
+
+// =====================================================
+// CAMERA
+// =====================================================
+
+const camera=
+    new THREE.PerspectiveCamera(
+        70,
+        innerWidth/innerHeight,
+        0.05,
+        1000
+    );
+
+
+// =====================================================
+// RENDERER
+// =====================================================
+
+const renderer=
+    new THREE.WebGLRenderer({
+        antialias:true,
+        powerPreference:'high-performance'
+    });
+
+renderer.setSize(
+    innerWidth,
+    innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(devicePixelRatio,1.5)
+);
+
+renderer.outputEncoding=
+    THREE.sRGBEncoding;
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+
+// =====================================================
+// LIGHT
+// =====================================================
+
+scene.add(
+    new THREE.HemisphereLight(
+        0xffffff,
+        0x555555,
+        1.7
+    )
+);
+
+const sun=
+    new THREE.DirectionalLight(
+        0xffffff,
+        2
+    );
+
+sun.position.set(
+    30,
+    50,
+    20
+);
+
+scene.add(sun);
+
+
+// =====================================================
+// MODELS
+// =====================================================
+
+const loader=
+    new GLTFLoader();
+
+let homeModel=null;
+let cityModel=null;
+let burgerModel=null;
+
+let homeColliders=[];
+let cityGround=[];
+
+let currentWorld='home';
+
+let burgerEaten=false;
+
+
+// =====================================================
+// PLAYER
+// =====================================================
+
+let yaw=0;
+let pitch=0;
+
+let velocityY=0;
+let onGround=false;
+
+const keys={};
+
+
+// =====================================================
+// AUDIO
+// =====================================================
+
+let audioContext=null;
+
+let masterGain=null;
+
+let ambienceGain=null;
+
+let soundEnabled=true;
+
+let stepTimer=0;
+
+let lastMoving=false;
+
+
+function initAudio(){
+
+    if(audioContext)
+        return;
+
+    audioContext=
+        new (
+            window.AudioContext||
+            window.webkitAudioContext
+        )();
+
+    masterGain=
+        audioContext.createGain();
+
+    masterGain.gain.value=0.28;
+
+    masterGain.connect(
+        audioContext.destination
+    );
+
+    ambienceGain=
+        audioContext.createGain();
+
+    ambienceGain.gain.value=0.025;
+
+    ambienceGain.connect(
+        masterGain
+    );
+
+    startAmbience();
+}
+
+
+async function resumeAudio(){
+
+    initAudio();
+
+    if(
+        audioContext.state===
+        'suspended'
+    ){
+        await audioContext.resume();
+    }
+}
+
+
+function tone(
+    frequency,
+    duration,
+    type='sine',
+    volume=0.1,
+    slide=0
+){
+
+    if(
+        !soundEnabled ||
+        !audioContext
+    )
+        return;
+
+    const osc=
+        audioContext.createOscillator();
+
+    const gain=
+        audioContext.createGain();
+
+    osc.type=type;
+
+    osc.frequency.setValueAtTime(
+        frequency,
+        audioContext.currentTime
+    );
+
+    if(slide!==0){
+
+        osc.frequency.exponentialRampToValueAtTime(
+            Math.max(20,frequency+slide),
+            audioContext.currentTime+
+            duration
+        );
+    }
+
+    gain.gain.setValueAtTime(
+        0.0001,
+        audioContext.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        volume,
+        audioContext.currentTime+0.015
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        audioContext.currentTime+
+        duration
+    );
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+
+    osc.start();
+
+    osc.stop(
+        audioContext.currentTime+
+        duration+
+        0.02
+    );
+}
+
+
+// =====================================================
+// AMBIENT SOUND
+// =====================================================
+
+function startAmbience(){
+
+    if(
+        !audioContext ||
+        !ambienceGain
+    )
+        return;
+
+    const osc=
+        audioContext.createOscillator();
+
+    const gain=
+        audioContext.createGain();
+
+    osc.type='sine';
+
+    osc.frequency.value=90;
+
+    gain.gain.value=0.08;
+
+    osc.connect(gain);
+
+    gain.connect(ambienceGain);
+
+    osc.start();
+
+    setTimeout(
+        ()=>{
+            try{
+                osc.stop();
+            }catch(e){}
+        },
+        1000000
+    );
+}
+
+
+// =====================================================
+// SOUNDS
+// =====================================================
+
+function footstep(){
+
+    if(!soundEnabled)
+        return;
+
+    const frequency=
+        keys['ShiftLeft']||
+        keys['ShiftRight']
+        ?125
+        :95;
+
+    tone(
+        frequency,
+        0.075,
+        'triangle',
+        0.055,
+        -25
+    );
+
+    tone(
+        frequency*0.5,
+        0.055,
+        'sine',
+        0.025,
+        -10
+    );
+}
+
+
+function jumpSound(){
+
+    tone(
+        260,
+        0.18,
+        'sine',
+        0.09,
+        180
+    );
+}
+
+
+function eatSound(){
+
+    tone(
+        350,
+        0.08,
+        'square',
+        0.08,
+        80
+    );
+
+    setTimeout(
+        ()=>{
+            tone(
+                520,
+                0.12,
+                'square',
+                0.07,
+                120
+            );
+        },
+        80
+    );
+
+    setTimeout(
+        ()=>{
+            tone(
+                720,
+                0.18,
+                'sine',
+                0.08,
+                180
+            );
+        },
+        170
+    );
+}
+
+
+function exitSound(){
+
+    tone(
+        250,
+        0.12,
+        'sine',
+        0.08,
+        100
+    );
+
+    setTimeout(
+        ()=>{
+            tone(
+                400,
+                0.16,
+                'sine',
+                0.08,
+                180
+            );
+        },
+        120
+    );
+
+    setTimeout(
+        ()=>{
+            tone(
+                650,
+                0.25,
+                'sine',
+                0.08,
+                220
+            );
+        },
+        260
+    );
+}
+
+
+function toggleSound(){
+
+    soundEnabled=!soundEnabled;
+
+    document.getElementById(
+        'soundBtn'
+    ).textContent=
+        soundEnabled?'🔊':'🔇';
+
+    if(soundEnabled)
+        resumeAudio();
+}
+
+
+// =====================================================
+// KEYBOARD
+// =====================================================
+
+addEventListener(
+    'keydown',
+    e=>{
+
+        keys[e.code]=true;
+
+        if(e.code==='KeyE'){
+
+            interact();
+        }
+
+        if(e.code==='Space'){
+
+            e.preventDefault();
+
+            if(onGround){
+
+                velocityY=
+                    JUMP_POWER;
+
+                onGround=false;
+
+                resumeAudio();
+
+                jumpSound();
+            }
+        }
+    }
+);
+
+
+addEventListener(
+    'keyup',
+    e=>{
+
+        keys[e.code]=false;
+    }
+);
+
+
+// =====================================================
+// MOUSE LOOK
+// =====================================================
+
+let mouseLocked=false;
+
+renderer.domElement.addEventListener(
+    'click',
+    ()=>{
+
+        resumeAudio();
+
+        if(innerWidth<=800)
+            return;
+
+        renderer.domElement.requestPointerLock();
+    }
+);
+
+
+document.addEventListener(
+    'pointerlockchange',
+    ()=>{
+
+        mouseLocked=
+            document.pointerLockElement===
+            renderer.domElement;
+    }
+);
+
+
+document.addEventListener(
+    'mousemove',
+    e=>{
+
+        if(!mouseLocked)
+            return;
+
+        yaw-=
+            e.movementX*0.0025;
+
+        pitch-=
+            e.movementY*0.0025;
+
+        pitch=
+            Math.max(
+                -1.45,
+                Math.min(
+                    1.45,
+                    pitch
+                )
+            );
+    }
+);
+
+
+// =====================================================
+// SURFACE
+// =====================================================
+
+function findSurfaceY(
+    object,
+    x,
+    z
+){
+
+    if(!object)
+        return null;
+
+    const raycaster=
+        new THREE.Raycaster();
+
+    raycaster.set(
+        new THREE.Vector3(
+            x,
+            1000,
+            z
+        ),
+        new THREE.Vector3(
+            0,
+            -1,
+            0
+        )
+    );
+
+    const hits=
+        raycaster.intersectObject(
+            object,
+            true
+        );
+
+    let best=null;
+
+    for(
+        const hit of hits
+    ){
+
+        if(!hit.face)
+            continue;
+
+        const normal=
+            hit.face.normal.clone();
+
+        normal.transformDirection(
+            hit.object.matrixWorld
+        );
+
+        if(normal.y<0.75)
+            continue;
+
+        if(
+            best===null||
+            hit.point.y>best
+        ){
+
+            best=
+                hit.point.y;
+        }
+    }
+
+    return best;
+}
+
+
+// =====================================================
+// HOME COLLIDERS
+// =====================================================
+
+function createHomeColliders(){
+
+    homeColliders=[];
+
+    if(!homeModel)
+        return;
+
+    homeModel.updateMatrixWorld(true);
+
+    homeModel.traverse(
+        obj=>{
+
+            if(!obj.isMesh)
+                return;
+
+            const box=
+                new THREE.Box3()
+                .setFromObject(obj);
+
+            if(box.isEmpty())
+                return;
+
+            const size=
+                new THREE.Vector3();
+
+            box.getSize(size);
+
+            if(
+                size.x<0.15||
+                size.z<0.15
+            )
+                return;
+
+            if(
+                size.y<0.05&&
+                size.x>5&&
+                size.z>5
+            )
+                return;
+
+            if(
+                size.x>30&&
+                size.z>30
+            )
+                return;
+
+            homeColliders.push(box);
+        }
+    );
+}
+
+
+function homeBlocked(
+    x,
+    y,
+    z
+){
+
+    const playerBox=
+        new THREE.Box3(
+            new THREE.Vector3(
+                x-PLAYER_RADIUS,
+                y-PLAYER_HEIGHT+0.15,
+                z-PLAYER_RADIUS
+            ),
+            new THREE.Vector3(
+                x+PLAYER_RADIUS,
+                y+0.2,
+                z+PLAYER_RADIUS
+            )
+        );
+
+    for(
+        const box of homeColliders
+    ){
+
+        if(
+            playerBox.intersectsBox(box)
+        )
+            return true;
+    }
+
+    return false;
+}
+
+
+// =====================================================
+// HOME SPAWN
+// =====================================================
+
+function findSafeHomeSpawn(){
+
+    const candidates=[
+
+        [4,0],[-4,0],
+        [0,4],[0,-4],
+        [5,2],[-5,2],
+        [5,-2],[-5,-2],
+        [2,5],[-2,5],
+        [2,-5],[-2,-5],
+        [6,0],[-6,0],
+        [0,6],[0,-6],
+        [7,3],[-7,3],
+        [7,-3],[-7,-3],
+        [3,7],[-3,7],
+        [3,-7],[-3,-7]
+    ];
+
+    for(
+        const p of candidates
+    ){
+
+        const y=
+            findSurfaceY(
+                homeModel,
+                p[0],
+                p[1]
+            );
+
+        if(y===null)
+            continue;
+
+        const py=
+            y+PLAYER_HEIGHT;
+
+        if(
+            !homeBlocked(
+                p[0],
+                py,
+                p[1]
+            )
+        ){
+
+            return{
+                x:p[0],
+                y:py,
+                z:p[1]
+            };
+        }
+    }
+
+    return{
+        x:0,
+        y:PLAYER_HEIGHT,
+        z:0
+    };
+}
+
+
+// =====================================================
+// BURGER
+// =====================================================
+
+function placeBurger(){
+
+    if(
+        !burgerModel||
+        !homeModel
+    )
+        return;
+
+    burgerModel.scale.setScalar(
+        BURGER_SCALE
+    );
+
+    /*
+       همبرگر وسط خانه قرار می‌گیرد.
+       ارتفاع از کف واقعی محاسبه می‌شود.
+    */
+
+    const x=0;
+    const z=0;
+
+    burgerModel.position.set(
+        x,
+        100,
+        z
+    );
+
+    burgerModel.updateMatrixWorld(true);
+
+    const raycaster=
+        new THREE.Raycaster();
+
+    raycaster.set(
+        new THREE.Vector3(
+            x,
+            1000,
+            z
+        ),
+        new THREE.Vector3(
+            0,
+            -1,
+            0
+        )
+    );
+
+    const hits=
+        raycaster.intersectObject(
+            homeModel,
+            true
+        );
+
+    let floorY=null;
+
+    for(
+        const hit of hits
+    ){
+
+        if(!hit.face)
+            continue;
+
+        const normal=
+            hit.face.normal.clone();
+
+        normal.transformDirection(
+            hit.object.matrixWorld
+        );
+
+        if(normal.y<0.75)
+            continue;
+
+        if(
+            floorY===null||
+            hit.point.y<floorY
+        ){
+
+            floorY=
+                hit.point.y;
+        }
+    }
+
+    if(floorY===null){
+
+        const box=
+            new THREE.Box3()
+            .setFromObject(
+                homeModel
+            );
+
+        floorY=
+            box.min.y;
+    }
+
+    burgerModel.position.set(
+        x,
+        floorY+0.05,
+        z
+    );
+
+    burgerModel.updateMatrixWorld(true);
+
+    const burgerBox=
+        new THREE.Box3()
+        .setFromObject(
+            burgerModel
+        );
+
+    burgerModel.position.y+=
+        floorY+
+        0.05-
+        burgerBox.min.y;
+
+    burgerModel.updateMatrixWorld(true);
+
+    burgerModel.visible=true;
+}
+
+
+// =====================================================
+// LOAD HOME
+// =====================================================
+
+function loadHome(){
+
+    return new Promise(
+        (resolve,reject)=>{
+
+            loader.load(
+                'home.glb',
+
+                gltf=>{
+
+                    homeModel=
+                        gltf.scene;
+
+                    homeModel.scale
+                        .setScalar(
+                            HOME_SCALE
+                        );
+
+                    scene.add(
+                        homeModel
+                    );
+
+                    homeModel.updateMatrixWorld(true);
+
+                    createHomeColliders();
+
+                    const spawn=
+                        findSafeHomeSpawn();
+
+                    camera.position.set(
+                        spawn.x,
+                        spawn.y,
+                        spawn.z
+                    );
+
+                    resolve();
+                },
+
+                undefined,
+
+                reject
+            );
+        }
+    );
+}
+
+
+// =====================================================
+// LOAD BURGER
+// =====================================================
+
+function loadBurger(){
+
+    return new Promise(
+        (resolve,reject)=>{
+
+            loader.load(
+                'Cheeseburger.glb',
+
+                gltf=>{
+
+                    burgerModel=
+                        gltf.scene;
+
+                    scene.add(
+                        burgerModel
+                    );
+
+                    placeBurger();
+
+                    resolve();
+                },
+
+                undefined,
+
+                reject
+            );
+        }
+    );
+}
+
+
+// =====================================================
+// CITY
+// =====================================================
+
+function collectCityGround(){
+
+    cityGround=[];
+
+    if(!cityModel)
+        return;
+
+    cityModel.updateMatrixWorld(true);
+
+    cityModel.traverse(
+        obj=>{
+
+            if(obj.isMesh)
+                cityGround.push(obj);
+        }
+    );
+}
+
+
+function findCityFloor(
+    x,
+    z
+){
+
+    const raycaster=
+        new THREE.Raycaster();
+
+    raycaster.set(
+        new THREE.Vector3(
+            x,
+            1000,
+            z
+        ),
+        new THREE.Vector3(
+            0,
+            -1,
+            0
+        )
+    );
+
+    let best=null;
+
+    for(
+        const mesh of cityGround
+    ){
+
+        const hits=
+            raycaster.intersectObject(
+                mesh,
+                false
+            );
+
+        for(
+            const hit of hits
+        ){
+
+            if(!hit.face)
+                continue;
+
+            const normal=
+                hit.face.normal.clone();
+
+            normal.transformDirection(
+                hit.object.matrixWorld
+            );
+
+            if(normal.y<0.75)
+                continue;
+
+            if(
+                best===null||
+                hit.point.y<best
+            ){
+
+                best=
+                    hit.point.y;
+            }
+        }
+    }
+
+    return best;
+}
+
+
+function findCitySpawn(){
+
+    const candidates=[
+
+        [0,0],
+        [5,0],[-5,0],
+        [0,5],[0,-5],
+        [10,0],[-10,0],
+        [0,10],[0,-10],
+        [15,5],[-15,5],
+        [15,-5],[-15,-5],
+        [5,15],[-5,15]
+    ];
+
+    for(
+        const p of candidates
+    ){
+
+        const y=
+            findCityFloor(
+                p[0],
+                p[1]
+            );
+
+        if(y!==null){
+
+            return{
+                x:p[0],
+                y:y+PLAYER_HEIGHT,
+                z:p[1]
+            };
+        }
+    }
+
+    return{
+        x:0,
+        y:PLAYER_HEIGHT,
+        z:0
+    };
+}
+
+
+function loadCity(){
+
+    return new Promise(
+        (resolve,reject)=>{
+
+            loader.load(
+                'city.glb',
+
+                gltf=>{
+
+                    cityModel=
+                        gltf.scene;
+
+                    cityModel.scale
+                        .setScalar(
+                            CITY_SCALE
+                        );
+
+                    cityModel.visible=false;
+
+                    scene.add(
+                        cityModel
+                    );
+
+                    cityModel.updateMatrixWorld(true);
+
+                    collectCityGround();
+
+                    resolve();
+                },
+
+                undefined,
+
+                reject
+            );
+        }
+    );
+}
+
+
+// =====================================================
+// ENTER CITY
+// =====================================================
+
+function enterCity(){
+
+    if(!cityModel)
+        return;
+
+    if(homeModel)
+        homeModel.visible=false;
+
+    if(burgerModel)
+        burgerModel.visible=false;
+
+    cityModel.visible=true;
+
+    currentWorld='city';
+
+    document.getElementById(
+        'worldName'
+    ).textContent='CITY';
+
+    const spawn=
+        findCitySpawn();
+
+    camera.position.set(
+        spawn.x,
+        spawn.y,
+        spawn.z
+    );
+
+    velocityY=0;
+
+    exitSound();
+
+    showMessage(
+        'به شهر رسیدی 🌆'
+    );
+}
+
+
+// =====================================================
+// INTERACT
+// =====================================================
+
+function interact(){
+
+    resumeAudio();
+
+    if(currentWorld!=='home')
+        return;
+
+    if(
+        burgerModel&&
+        burgerModel.visible&&
+        !burgerEaten
+    ){
+
+        const distance=
+            camera.position.distanceTo(
+                burgerModel.position
+            );
+
+        if(
+            distance<
+            INTERACTION_DISTANCE
+        ){
+
+            burgerEaten=true;
+
+            burgerModel.visible=false;
+
+            eatSound();
+
+            showMessage(
+                'همبرگر رو خوردی! 🍔 حالا برو سمت خروجی 🚪'
+            );
+
+            return;
+        }
+    }
+
+    if(burgerEaten){
+
+        const exitDistance=
+            Math.sqrt(
+                camera.position.x*
+                camera.position.x+
+                Math.pow(
+                    camera.position.z-5,
+                    2
+                )
+            );
+
+        if(exitDistance<4){
+
+            enterCity();
+        }
+    }
+}
+
+
+// =====================================================
+// MESSAGE
+// =====================================================
+
+function showMessage(text){
+
+    const el=
+        document.getElementById(
+            'message'
+        );
+
+    el.textContent=text;
+
+    el.style.display='block';
+
+    clearTimeout(
+        showMessage.timer
+    );
+
+    showMessage.timer=
+        setTimeout(
+            ()=>{
+                el.style.display='none';
+            },
+            2500
+        );
+}
+
+
+// =====================================================
+// PROMPT
+// =====================================================
+
+function updatePrompt(){
+
+    const prompt=
+        document.getElementById(
+            'prompt'
+        );
+
+    prompt.style.display='none';
+
+    if(currentWorld!=='home')
+        return;
+
+    if(
+        burgerModel&&
+        burgerModel.visible&&
+        !burgerEaten
+    ){
+
+        const d=
+            camera.position.distanceTo(
+                burgerModel.position
+            );
+
+        if(d<INTERACTION_DISTANCE){
+
+            prompt.textContent=
+                'E  خوردن همبرگر 🍔';
+
+            prompt.style.display='block';
+
+            return;
+        }
+    }
+
+    if(burgerEaten){
+
+        const d=
+            Math.sqrt(
+                camera.position.x*
+                camera.position.x+
+                Math.pow(
+                    camera.position.z-5,
+                    2
+                )
+            );
+
+        if(d<4){
+
+            prompt.textContent=
+                'E  EXIT 🚪';
+
+            prompt.style.display='block';
+        }
+    }
+}
+
+
+// =====================================================
+// MOBILE JOYSTICK
+// =====================================================
+
+let joystickX=0;
+let joystickY=0;
+let joystickActive=false;
+
+const joystick=
+    document.getElementById(
+        'joystick'
+    );
+
+const stick=
+    document.getElementById(
+        'stick'
+    );
+
+
+function updateJoystick(e){
+
+    const rect=
+        joystick.getBoundingClientRect();
+
+    let x=
+        e.clientX-
+        (rect.left+rect.width/2);
+
+    let y=
+        e.clientY-
+        (rect.top+rect.height/2);
+
+    const max=42;
+
+    const len=
+        Math.sqrt(
+            x*x+y*y
+        );
+
+    if(len>max){
+
+        x=x/len*max;
+        y=y/len*max;
+    }
+
+    stick.style.transform=
+        `translate(${x}px,${y}px)`;
+
+    joystickX=x/max;
+    joystickY=y/max;
+}
+
+
+joystick.addEventListener(
+    'pointerdown',
+    e=>{
+
+        resumeAudio();
+
+        joystickActive=true;
+
+        joystick.setPointerCapture(
+            e.pointerId
+        );
+
+        updateJoystick(e);
+    }
+);
+
+
+joystick.addEventListener(
+    'pointermove',
+    e=>{
+
+        if(joystickActive)
+            updateJoystick(e);
+    }
+);
+
+
+joystick.addEventListener(
+    'pointerup',
+    ()=>{
+
+        joystickActive=false;
+
+        joystickX=0;
+        joystickY=0;
+
+        stick.style.transform=
+            'translate(0px,0px)';
+    }
+);
+
+
+// =====================================================
+// MOBILE LOOK
+// =====================================================
+
+const lookArea=
+    document.getElementById(
+        'lookArea'
+    );
+
+let lastLookX=0;
+let lastLookY=0;
+let looking=false;
+
+
+lookArea.addEventListener(
+    'pointerdown',
+    e=>{
+
+        resumeAudio();
+
+        looking=true;
+
+        lastLookX=e.clientX;
+        lastLookY=e.clientY;
+
+        lookArea.setPointerCapture(
+            e.pointerId
+        );
+    }
+);
+
+
+lookArea.addEventListener(
+    'pointermove',
+    e=>{
+
+        if(!looking)
+            return;
+
+        const dx=
+            e.clientX-lastLookX;
+
+        const dy=
+            e.clientY-lastLookY;
+
+        lastLookX=e.clientX;
+        lastLookY=e.clientY;
+
+        yaw-=dx*0.005;
+
+        pitch-=dy*0.005;
+
+        pitch=
+            Math.max(
+                -1.45,
+                Math.min(
+                    1.45,
+                    pitch
+                )
+            );
+    }
+);
+
+
+lookArea.addEventListener(
+    'pointerup',
+    ()=>{
+        looking=false;
+    }
+);
+
+
+// =====================================================
+// MOBILE ACTION
+// =====================================================
+
+document.getElementById(
+    'actionBtn'
+).addEventListener(
+    'pointerdown',
+    ()=>{
+        interact();
+    }
+);
+
+
+document.getElementById(
+    'jumpBtn'
+).addEventListener(
+    'pointerdown',
+    ()=>{
+
+        resumeAudio();
+
+        if(onGround){
+
+            velocityY=
+                JUMP_POWER;
+
+            onGround=false;
+
+            jumpSound();
+        }
+    }
+);
+
+
+// =====================================================
+// FULLSCREEN MOBILE
+// =====================================================
+
+async function fullscreen(){
+
+    try{
+
+        if(!document.fullscreenElement){
+
+            await document.documentElement.requestFullscreen();
+
+        }else{
+
+            await document.exitFullscreen();
+        }
+
+    }catch(e){
+
+        try{
+
+            if(
+                screen.orientation &&
+                screen.orientation.lock
+            ){
+
+                await screen.orientation.lock(
+                    'landscape'
+                );
+            }
+
+        }catch(e2){}
+    }
+}
+
+
+document.getElementById(
+    'fullscreenBtn'
+).addEventListener(
+    'pointerdown',
+    async ()=>{
+        await fullscreen();
+    }
+);
+
+
+document.getElementById(
+    'soundBtn'
+).addEventListener(
+    'pointerdown',
+    ()=>{
+        toggleSound();
+    }
+);
+
+
+// =====================================================
+// START SOUND
+// =====================================================
+
+document.getElementById(
+    'startSoundButton'
+).addEventListener(
+    'click',
+    async ()=>{
+
+        await resumeAudio();
+
+        document.getElementById(
+            'startSound'
+        ).style.display='none';
+    }
+);
+
+
+// =====================================================
+// MOVEMENT
+// =====================================================
+
+function updateMovement(dt){
+
+    let forward=0;
+    let right=0;
+
+    if(keys['KeyW'])
+        forward+=1;
+
+    if(keys['KeyS'])
+        forward-=1;
+
+    if(keys['KeyD'])
+        right+=1;
+
+    if(keys['KeyA'])
+        right-=1;
+
+    if(
+        Math.abs(joystickY)>0.05||
+        Math.abs(joystickX)>0.05
+    ){
+
+        forward+=-joystickY;
+        right+=joystickX;
+    }
+
+    const length=
+        Math.sqrt(
+            forward*forward+
+            right*right
+        );
+
+    if(length>1){
+
+        forward/=length;
+        right/=length;
+    }
+
+    const moving=
+        Math.abs(forward)>0.05||
+        Math.abs(right)>0.05;
+
+    const running=
+        keys['ShiftLeft']||
+        keys['ShiftRight'];
+
+    const speed=
+        running?
+        RUN_SPEED:
+        WALK_SPEED;
+
+    if(
+        moving&&
+        !lastMoving
+    ){
+
+        stepTimer=0;
+    }
+
+    if(moving){
+
+        stepTimer-=dt;
+
+        const interval=
+            running?
+            0.30:
+            0.45;
+
+        if(stepTimer<=0){
+
+            footstep();
+
+            stepTimer=interval;
+        }
+    }else{
+
+        stepTimer=0;
+    }
+
+    lastMoving=moving;
+
+    const direction=
+        new THREE.Vector3(
+            right,
+            0,
+            -forward
+        );
+
+    direction.applyAxisAngle(
+        new THREE.Vector3(
+            0,
+            1,
+            0
+        ),
+        yaw
+    );
+
+    const dx=
+        direction.x*
+        speed*
+        dt;
+
+    const dz=
+        direction.z*
+        speed*
+        dt;
+
+
+    if(currentWorld==='home'){
+
+        const nx=
+            camera.position.x+
+            dx;
+
+        const nz=
+            camera.position.z+
+            dz;
+
+        if(
+            !homeBlocked(
+                nx,
+                camera.position.y,
+                camera.position.z
+            )
+        ){
+
+            camera.position.x=nx;
+        }
+
+        if(
+            !homeBlocked(
+                camera.position.x,
+                camera.position.y,
+                nz
+            )
+        ){
+
+            camera.position.z=nz;
+        }
+
+    }else{
+
+        camera.position.x+=dx;
+
+        camera.position.z+=dz;
+    }
+}
+
+
+// =====================================================
+// VERTICAL PHYSICS
+// =====================================================
+
+function updateVerticalPhysics(dt){
+
+    velocityY-=
+        GRAVITY*dt;
+
+    camera.position.y+=
+        velocityY*dt;
+
+    if(currentWorld==='home'){
+
+        const floor=
+            findSurfaceY(
+                homeModel,
+                camera.position.x,
+                camera.position.z
+            );
+
+        if(floor!==null){
+
+            const target=
+                floor+
+                PLAYER_HEIGHT;
+
+            if(
+                camera.position.y<=target
+            ){
+
+                camera.position.y=
+                    target;
+
+                velocityY=0;
+
+                onGround=true;
+            }
+        }
+
+    }else{
+
+        const floor=
+            findCityFloor(
+                camera.position.x,
+                camera.position.z
+            );
+
+        if(floor!==null){
+
+            const target=
+                floor+
+                PLAYER_HEIGHT;
+
+            if(
+                camera.position.y<=target
+            ){
+
+                camera.position.y=
+                    target;
+
+                velocityY=0;
+
+                onGround=true;
+
+            }else{
+
+                onGround=false;
+            }
+
+        }else{
+
+            onGround=false;
+        }
+    }
+}
+
+
+// =====================================================
+// CAMERA
+// =====================================================
+
+function updateCamera(){
+
+    camera.rotation.order='YXZ';
+
+    camera.rotation.y=yaw;
+
+    camera.rotation.x=pitch;
+}
+
+
+// =====================================================
+// RESIZE
+// =====================================================
+
+addEventListener(
+    'resize',
+    ()=>{
+
+        camera.aspect=
+            innerWidth/innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            innerWidth,
+            innerHeight
+        );
+    }
+);
+
+
+// =====================================================
+// ANIMATION
+// =====================================================
+
+let lastTime=
+    performance.now();
+
+
+function animate(){
+
+    requestAnimationFrame(
+        animate
+    );
+
+    const now=
+        performance.now();
+
+    let dt=
+        (now-lastTime)/1000;
+
+    lastTime=now;
+
+    dt=
+        Math.min(
+            dt,
+            0.05
+        );
+
+    updateMovement(dt);
+
+    updateVerticalPhysics(dt);
+
+    updateCamera();
+
+    updatePrompt();
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+
+// =====================================================
+// START
+// =====================================================
+
+async function start(){
+
+    try{
+
+        await loadHome();
+
+        await loadBurger();
+
+        await loadCity();
+
+        document.getElementById(
+            'loading'
+        ).style.display='none';
+
+        showMessage(
+            'همبرگر رو پیدا کن 🍔'
+        );
+
+        /*
+           روی موبایل/مرورگرهایی که اجازه‌ی
+           Audio خودکار نمی‌دهند، اولین لمس
+           صدا را فعال می‌کند.
+        */
+
+        if(innerWidth<=800){
+
+            document.getElementById(
+                'startSound'
+            ).style.display='flex';
+        }
+
+        animate();
+
+    }catch(error){
+
+        console.error(error);
+
+        document.getElementById(
+            'loading'
+        ).textContent=
+            'خطا در بارگذاری فایل‌ها';
+    }
+}
+
+start();
+
+</script>
+</body>
+</html>
